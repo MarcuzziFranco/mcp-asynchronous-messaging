@@ -22,7 +22,7 @@ while (true)
 
     // Step 2: Send the response to the MCP
     var mcpResponse = await mcpService.SendCommandAsync(sanitizedResponse);
-    Console.WriteLine("\nMCP Response:");
+    Console.WriteLine("\nMCP Service Response:");
     Console.WriteLine(mcpResponse);
 
     // Step 3: If the LLM requested clarification, resend the MCP response to the LLM
@@ -39,6 +39,6 @@ while (true)
         Console.WriteLine(finalMcpResponse);
     }
     else {
-        Console.WriteLine("Clarification not required");
+        Console.WriteLine("Ready inference completed");
     }
 }
