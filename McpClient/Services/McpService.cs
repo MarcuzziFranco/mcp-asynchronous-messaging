@@ -27,7 +27,7 @@ public class McpService
         catch (Exception ex)
         {
             Console.WriteLine("Error sending command to MCP");
-            Console.WriteLine($"Error: {ex.Message}");
+            //Console.WriteLine($"Error: {ex.Message}");
             return GenerateClarificationFallback(json, ex.Message);
         }
     }
@@ -48,7 +48,7 @@ public class McpService
     private string MockReadQueue(JsonDocument doc)
     {
         Console.WriteLine("Action MockReadQueue");
-        var queue = doc.RootElement.GetProperty("parameters").GetProperty("queueName").GetString();
+        var queue = doc.RootElement.GetProperty("parameters").GetProperty("queue").GetString();
         return $$"""
         {
           "status": "success",

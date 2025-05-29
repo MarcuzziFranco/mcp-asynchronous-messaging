@@ -26,7 +26,7 @@ while (true)
     Console.WriteLine(mcpResponse);
 
     // Step 3: If the LLM requested clarification, resend the MCP response to the LLM
-    if (mcpResponse.Contains("\"action\": \"requestClarification\""))
+    if (mcpResponse.Contains("\"action\": \"requestClarification\"")) //Actulizar la clave action por nextAction y armar el flujo correspondiente.
     {
         Console.WriteLine("\nReenviando información al LLM para reevaluar...");
 
