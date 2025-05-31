@@ -57,7 +57,7 @@ public class RabbitMqService : IRabbitMqService, IDisposable
             
             await channel.QueueDeclareAsync(
                 queue: queue,
-                durable: true,
+                durable: false,
                 exclusive: false,
                 autoDelete: false,
                 arguments: null);
@@ -136,12 +136,22 @@ public class RabbitMqService : IRabbitMqService, IDisposable
         {
             using var channel = await _connection.CreateChannelAsync();
             
-            await channel.QueueDeclareAsync(
-                queue: queue,
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null);
+            try
+            {
+                // Intentar declarar la cola con los mismos parámetros que SendMessageAsync
+                await channel.QueueDeclareAsync(
+                    queue: queue,
+                    durable: false,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null);
+            }
+            catch (Exception)
+            {
+                // Si falla la declaración, es probable que la cola ya exista con diferentes parámetros
+                // Continuamos sin declarar, asumiendo que la cola existe
+                Console.WriteLine($"Queue '{queue}' already exists with different parameters, continuing...");
+            }
 
             // Leer mensajes de la cola
             for (int i = 0; i < maxMessages; i++)
