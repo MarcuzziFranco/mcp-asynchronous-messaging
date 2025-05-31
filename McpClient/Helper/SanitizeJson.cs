@@ -21,15 +21,15 @@ public static class SanitizeJson
         {
             // Paso 1: Limpiar marcadores de markdown comunes
             string cleaned = input.Replace("```json", "").Replace("```", "").Trim();
-            Console.WriteLine($"DESPUÉS DE LIMPIAR MARKDOWN: {cleaned}");
+            //Console.WriteLine($"DESPUÉS DE LIMPIAR MARKDOWN: {cleaned}");
 
             // Paso 2: Eliminar comentarios // al final de líneas
             string withoutComments = RemoveInlineComments(cleaned);
-            Console.WriteLine($"DESPUÉS DE ELIMINAR COMENTARIOS: {withoutComments}");
+            //Console.WriteLine($"DESPUÉS DE ELIMINAR COMENTARIOS: {withoutComments}");
 
             // Paso 3: Normalizar comillas simples a comillas dobles para JSON válido
             string normalizedQuotes = NormalizeQuotes(withoutComments);
-            Console.WriteLine($"DESPUÉS DE NORMALIZAR COMILLAS: {normalizedQuotes}");
+            //Console.WriteLine($"DESPUÉS DE NORMALIZAR COMILLAS: {normalizedQuotes}");
 
             // Paso 4: Buscar JSON usando regex - objetos que empiecen con {
             string jsonPattern = @"\{(?:[^{}]|(?<open>\{)|(?<-open>\}))+(?(open)(?!))\}";
@@ -40,12 +40,12 @@ public static class SanitizeJson
                 foreach (Match match in matches)
                 {
                     string candidateJson = match.Value.Trim();
-                    Console.WriteLine($"CANDIDATO JSON ENCONTRADO: {candidateJson}");
+                    //Console.WriteLine($"CANDIDATO JSON ENCONTRADO: {candidateJson}");
                     
                     if (TryParseJson(candidateJson, out string validJson))
                     {
-                        Console.WriteLine($"JSON VÁLIDO EXTRAÍDO: {validJson}");
-                        Console.WriteLine("========================== FIN SanitizeJson ==========================");
+                        //Console.WriteLine($"JSON VÁLIDO EXTRAÍDO: {validJson}");
+                        //Console.WriteLine("========================== FIN SanitizeJson ==========================");
                         return validJson;
                     }
                 }
@@ -60,19 +60,19 @@ public static class SanitizeJson
                 foreach (Match match in arrayMatches)
                 {
                     string candidateJson = match.Value.Trim();
-                    Console.WriteLine($"CANDIDATO ARRAY JSON ENCONTRADO: {candidateJson}");
+                    //Console.WriteLine($"CANDIDATO ARRAY JSON ENCONTRADO: {candidateJson}");
                     
                     if (TryParseJson(candidateJson, out string validJson))
                     {
-                        Console.WriteLine($"ARRAY JSON VÁLIDO EXTRAÍDO: {validJson}");
-                        Console.WriteLine("========================== FIN SanitizeJson ==========================");
+                        //Console.WriteLine($"ARRAY JSON VÁLIDO EXTRAÍDO: {validJson}");
+                        //Console.WriteLine("========================== FIN SanitizeJson ==========================");
                         return validJson;
                     }
                 }
             }
 
             // Paso 6: Intentar parsear el string completo limpio
-            Console.WriteLine("INTENTANDO PARSEAR STRING COMPLETO LIMPIO...");
+            //Console.WriteLine("INTENTANDO PARSEAR STRING COMPLETO LIMPIO...");
             if (TryParseJson(normalizedQuotes, out string finalJson))
             {
                 Console.WriteLine($"STRING COMPLETO ES JSON VÁLIDO: {finalJson}");
@@ -81,7 +81,7 @@ public static class SanitizeJson
             }
 
             // Paso 7: Si nada funciona, intentar encontrar cualquier estructura similar a JSON
-            Console.WriteLine("BUSCANDO CUALQUIER ESTRUCTURA SIMILAR A JSON...");
+            //Console.WriteLine("BUSCANDO CUALQUIER ESTRUCTURA SIMILAR A JSON...");
             int startIndex = normalizedQuotes.IndexOfAny(new char[] { '{', '[' });
             if (startIndex >= 0)
             {
@@ -90,33 +90,33 @@ public static class SanitizeJson
                     if (normalizedQuotes[endIndex] == '}' || normalizedQuotes[endIndex] == ']')
                     {
                         string substring = normalizedQuotes.Substring(startIndex, endIndex - startIndex + 1);
-                        Console.WriteLine($"PROBANDO SUBSTRING: {substring}");
+                        //Console.WriteLine($"PROBANDO SUBSTRING: {substring}");
                         
                         if (TryParseJson(substring, out string substringJson))
                         {
-                            Console.WriteLine($"SUBSTRING JSON VÁLIDO: {substringJson}");
-                            Console.WriteLine("========================== FIN SanitizeJson ==========================");
+                            //Console.WriteLine($"SUBSTRING JSON VÁLIDO: {substringJson}");
+                            //Console.WriteLine("========================== FIN SanitizeJson ==========================");
                             return substringJson;
                         }
                     }
                 }
             }
 
-            Console.WriteLine("NO SE PUDO EXTRAER JSON VÁLIDO, RETORNANDO JSON VACÍO");
-            Console.WriteLine("========================== FIN SanitizeJson ==========================");
+            //Console.WriteLine("NO SE PUDO EXTRAER JSON VÁLIDO, RETORNANDO JSON VACÍO");
+            //Console.WriteLine("========================== FIN SanitizeJson ==========================");
             return "{}";
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"ERROR EN SanitizeJson: {ex.Message}");
-            Console.WriteLine("========================== FIN SanitizeJson ==========================");
+            //Console.WriteLine($"ERROR EN SanitizeJson: {ex.Message}");
+            //Console.WriteLine("========================== FIN SanitizeJson ==========================");
             return "{}";
         }
     }
 
     private static string RemoveInlineComments(string input)
     {
-        Console.WriteLine("--- Iniciando eliminación de comentarios inline ---");
+        //Console.WriteLine("--- Iniciando eliminación de comentarios inline ---");
         
         if (string.IsNullOrWhiteSpace(input))
             return input;
@@ -131,13 +131,13 @@ public static class SanitizeJson
             
             if (line != cleanedLine)
             {
-                Console.WriteLine($"LÍNEA ORIGINAL: {line}");
-                Console.WriteLine($"LÍNEA LIMPIA: {cleanedLine}");
+                //Console.WriteLine($"LÍNEA ORIGINAL: {line}");
+                //Console.WriteLine($"LÍNEA LIMPIA: {cleanedLine}");
             }
         }
 
         var result = string.Join("\n", cleanedLines);
-        Console.WriteLine("--- Fin eliminación de comentarios inline ---");
+        //Console.WriteLine("--- Fin eliminación de comentarios inline ---");
         return result;
     }
 
@@ -196,7 +196,7 @@ public static class SanitizeJson
 
     private static string NormalizeQuotes(string input)
     {
-        Console.WriteLine("--- Iniciando normalización de comillas ---");
+        //Console.WriteLine("--- Iniciando normalización de comillas ---");
         
         if (string.IsNullOrWhiteSpace(input))
             return input;
@@ -260,7 +260,7 @@ public static class SanitizeJson
                 else
                 {
                     // Convertir comilla simple a doble para JSON válido
-                    Console.WriteLine($"CONVIRTIENDO ' a \" en posición {i}");
+                    //Console.WriteLine($"CONVIRTIENDO ' a \" en posición {i}");
                     inSingleQuotes = !inSingleQuotes;
                     if (!inSingleQuotes)
                     {
@@ -279,11 +279,11 @@ public static class SanitizeJson
         
         if (input != normalized)
         {
-            Console.WriteLine($"ORIGINAL: {input}");
-            Console.WriteLine($"NORMALIZADO: {normalized}");
+            //Console.WriteLine($"ORIGINAL: {input}");
+            //Console.WriteLine($"NORMALIZADO: {normalized}");
         }
         
-        Console.WriteLine("--- Fin normalización de comillas ---");
+        //Console.WriteLine("--- Fin normalización de comillas ---");
         return normalized;
     }
 
