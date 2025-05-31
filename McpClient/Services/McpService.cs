@@ -1,44 +1,66 @@
 using System.Text.Json;
+using System.Text;
+using System.Net.Http;
 
 namespace McpClient.Services;
 
 public class McpService
 {
+    private readonly HttpClient _httpClient;
+    private readonly string _mcpServerUrl;
+
+    public McpService()
+    {
+        _httpClient = new HttpClient();
+        _mcpServerUrl = "http://localhost:5221/mcp";
+    }
+
     public async Task<string> SendCommandAsync(string json)
     {
         try
         {
-            var doc = JsonDocument.Parse(json);
-            var action = doc.RootElement.GetProperty("action").GetString();
+            Console.WriteLine("-------------------------------- SendCommandAsync --------------------------------");
+            Console.WriteLine("Sending JSON to MCP Server: " + json);
+            Console.WriteLine("----------------------------------------------------------------------------------");
 
-            return action switch
-            {
-                "sendMessageToQueue" => MockSendMessageToQueue(doc),
-                "sendMessageToTopic" => MockSendToTopic(doc),
-                "readQueue" => MockReadQueue(doc),
-                "listTopics" => MockListTopics(),
-                "connectService" => MockConnectService(doc),
-                "requestClarification" => MockRequestClarification(),
-                _ => GenerateClarificationFallback(action, "Invalid action")
-            };
+            // Crear el contenido HTTP con el JSON
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            
+            // Enviar la petición POST al servidor MCP
+            var response = await _httpClient.PostAsync(_mcpServerUrl, content);
+            
+            // Leer la respuesta
+            var responseBody = await response.Content.ReadAsStringAsync();
+            
+            Console.WriteLine("-------------------------------- MCP Server Response --------------------------------");
+            Console.WriteLine("Status Code: " + response.StatusCode);
+            Console.WriteLine("Response: " + responseBody);
+            Console.WriteLine("---------------------------------------------------------------------------");
+            
+            return responseBody;
         }
         catch (Exception ex)
         {
+            Console.WriteLine("Error sending command to MCP Server");
             Console.WriteLine($"Error: {ex.Message}");
             return GenerateClarificationFallback(json, ex.Message);
         }
+    }
+
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
     }
 
     private string GenerateClarificationFallback(string failedAction, string errorDetail)
     {
         return $$"""
         {
-            "action": "requestClarification",
-            "parameters": {},
             "errorContext": {
                 "failedAction": "{{failedAction}}",
                 "reason": "{{errorDetail}}"
-            }
+            },
+            "nextAction": "requestClarification"
         }
         """;
     }
@@ -46,7 +68,7 @@ public class McpService
     private string MockReadQueue(JsonDocument doc)
     {
         Console.WriteLine("Action MockReadQueue");
-        var queue = doc.RootElement.GetProperty("parameters").GetProperty("queueName").GetString();
+        var queue = doc.RootElement.GetProperty("parameters").GetProperty("queue").GetString();
         return $$"""
         {
           "status": "success",
@@ -76,8 +98,8 @@ public class McpService
 
     private string MockSendToTopic(JsonDocument doc)
     {
+        Console.WriteLine("Action MockSendToTopic");
         var topic = doc.RootElement.GetProperty("parameters").GetProperty("topic").GetString();
-        var subscription = doc.RootElement.GetProperty("parameters").GetProperty("subscription").GetString();
         var message = doc.RootElement.GetProperty("parameters").GetProperty("message").GetString();
 
         return $$"""
@@ -85,9 +107,8 @@ public class McpService
             "status": "success",
             "sentTo": {
                 "topic": "{{topic}}",
-                "subscription": "{{subscription}}"
+                "message": "{{message}}"
             },
-            "message": "{{message}}"
         }
         """;
     }
@@ -128,44 +149,27 @@ public class McpService
         "message": "The request could not be resolved to a specific action. Below are the supported MCP actions and their descriptions.",
         "supportedActions": [
             {
-                "name": "readQueue",
-                "description": "Reads the latest messages from a given queue.",
-                "parameters": {
-                    "queue": "string (required) - The name of the queue to read from."
-                }
+                "action": "sendMessageToQueue",
+                "description": "Send a message to a queue"
             },
             {
-                "name": "sendMessageToQueue",
-                "description": "Sends a text message to a specific queue.",
-                "parameters": {
-                    "queue": "string (required) - Target queue name.",
-                    "message": "string (required) - Content of the message."
-                }
+                "action": "sendMessageToTopic",
+                "description": "Send a message to a topic"
             },
             {
-                "name": "sendMessageToTopic",
-                "description": "Sends a text message to a specific topic.",
-                "parameters": {
-                    "topic": "string (required) - Target topic name.",
-                    "message": "string (required) - Content of the message."
-                }
+                "action": "readQueue",
+                "description": "Read a message from a queue"
             },
-                {
-                "name": "listTopics",
-                "description": "Lists all available messaging topics in the system.",
-                "parameters": {}
-                },
             {
-                "name": "connectService",
-                "description": "Connects the MCP to an external service by name.",
-                "parameters": {
-                    "service": "string (required) - Name of the external service."
-                }
+                "action": "listTopics",
+                "description": "List all topics"
+            },
+            {
+                "action": "connectService",
+                "description": "Connect to a service"
             }
-        ],
-        "documentation": "http://localhost:5000/docs"
+        ]
         }
         """;
     }
-
 }

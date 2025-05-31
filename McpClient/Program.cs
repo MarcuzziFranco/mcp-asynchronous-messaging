@@ -12,8 +12,12 @@ while (true)
     if (string.IsNullOrWhiteSpace(input)) continue;
     if (input == "exit") break;
 
+    var finalMessage = await ExecuteFinalWithFormatting(input);
+    Console.WriteLine("\nLLM → Mensaje final para usuario:");
+    finalMessage = SanitizeJson.Sanitize(finalMessage);
+    Console.WriteLine(finalMessage);
     // Step 1: Send the prompt to the LLM
-    var llmResponse = await llmService.SendPromptAsync(input);
+  /*var llmResponse = await llmService.SendPromptAsync(input);
     Console.WriteLine("\n🔁 LLM Response:");
     Console.WriteLine(llmResponse);
 
@@ -22,11 +26,11 @@ while (true)
 
     // Step 2: Send the response to the MCP
     var mcpResponse = await mcpService.SendCommandAsync(sanitizedResponse);
-    Console.WriteLine("\nMCP Response:");
+    Console.WriteLine("\nMCP Service Response:");
     Console.WriteLine(mcpResponse);
 
     // Step 3: If the LLM requested clarification, resend the MCP response to the LLM
-    if (mcpResponse.Contains("\"action\": \"requestClarification\""))
+    if (mcpResponse.Contains("\"action\": \"requestClarification\"")) //Actulizar la clave action por nextAction y armar el flujo correspondiente.
     {
         Console.WriteLine("\nReenviando información al LLM para reevaluar...");
 
@@ -39,6 +43,24 @@ while (true)
         Console.WriteLine(finalMcpResponse);
     }
     else {
-        Console.WriteLine("Clarification not required");
-    }
+        Console.WriteLine("Ready inference completed");
+    }*/
+}
+
+async Task<string> ExecuteFinalWithFormatting(string userInput)
+{
+    // Paso 1: Enviar el mensaje al LLM para que genere la acción
+    var llmAction = await llmService.SendPromptAsync(userInput);
+    Console.WriteLine("\nLLM → Acción:");
+    Console.WriteLine(llmAction);
+    var sanitizedResponse = SanitizeJson.Sanitize(llmAction);
+
+    // Paso 2: Ejecutar la acción en el MCP Server
+    var mcpResult = await mcpService.SendCommandAsync(sanitizedResponse);
+    Console.WriteLine("\nMCP → Resultado:");
+    Console.WriteLine(mcpResult);
+
+    // Paso 3: Reenviar el resultado al LLM para que genere respuesta de usuario
+    var finalMessage = await llmService.SendPromptAsync(mcpResult);
+    return finalMessage;
 }
