@@ -1,9 +1,17 @@
 ﻿using McpClient.Services;
 using McpClient.Helper;
 
-Console.WriteLine("🧠 MCP Client Console");
+Console.WriteLine("�� MCP Client Console - Agnóstico al Servidor");
+
+// Configurar servicios
 var llmService = new LlmService("http://localhost:11434", "phi4-mcp:latest");
-var mcpService = new McpService(); 
+var serverManager = new McpServerManager();
+var mcpService = new McpService(serverManager);
+var flowOrchestrator = new FlowOrchestrator(llmService, mcpService);
+
+// Mostrar información del servidor activo
+var activeServer = await serverManager.GetActiveServerAsync();
+Console.WriteLine($"📡 Servidor MCP activo: {activeServer.Name} ({activeServer.BaseUrl})");
 
 while (true)
 {
@@ -12,27 +20,15 @@ while (true)
     if (string.IsNullOrWhiteSpace(input)) continue;
     if (input == "exit") break;
 
-    var finalMessage = await ExecuteFinalWithFormatting(input);
-    Console.WriteLine("\nLLM → Mensaje final para usuario:");
-    finalMessage = SanitizeJson.Sanitize(finalMessage);
-    Console.WriteLine(finalMessage);
-    
-}
-
-async Task<string> ExecuteFinalWithFormatting(string userInput)
-{
-    // Paso 1: Enviar el mensaje al LLM para que genere la acción
-    var llmAction = await llmService.SendPromptAsync(userInput);
-    Console.WriteLine("\nLLM → Acción:");
-    Console.WriteLine(llmAction);
-    var sanitizedResponse = SanitizeJson.Sanitize(llmAction);
-
-    // Paso 2: Ejecutar la acción en el MCP Server
-    var mcpResult = await mcpService.SendCommandAsync(sanitizedResponse);
-    Console.WriteLine("\nMCP → Resultado:");
-    Console.WriteLine(mcpResult);
-
-    // Paso 3: Reenviar el resultado al LLM para que genere respuesta de usuario
-    var finalMessage = await llmService.SendPromptAsync(mcpResult);
-    return finalMessage;
+    try
+    {
+        var finalMessage = await flowOrchestrator.ProcessUserInputAsync(input);
+        Console.WriteLine("\n🎯 Respuesta final para el usuario:");
+        finalMessage = SanitizeJson.Sanitize(finalMessage);
+        Console.WriteLine(finalMessage);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"\n❌ Error procesando la solicitud: {ex.Message}");
+    }
 }
