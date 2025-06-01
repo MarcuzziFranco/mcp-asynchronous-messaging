@@ -1,7 +1,7 @@
 ﻿using McpClient.Services;
 using McpClient.Helper;
 
-Console.WriteLine("�� MCP Client Console - Agnóstico al Servidor");
+Console.WriteLine("MCP Client Console");
 
 // Configurar servicios
 var llmService = new LlmService("http://localhost:11434", "phi4-mcp:latest");
@@ -11,7 +11,7 @@ var flowOrchestrator = new FlowOrchestrator(llmService, mcpService);
 
 // Mostrar información del servidor activo
 var activeServer = await serverManager.GetActiveServerAsync();
-Console.WriteLine($"📡 Servidor MCP activo: {activeServer.Name} ({activeServer.BaseUrl})");
+Console.WriteLine($"Servidor MCP activo: {activeServer.Name} ({activeServer.BaseUrl})");
 
 while (true)
 {

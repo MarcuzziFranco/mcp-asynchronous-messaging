@@ -25,11 +25,10 @@ public class FlowOrchestrator : IFlowOrchestrator
         // Guardar el input original del usuario para contexto
         _originalUserInput = userInput;
 
-        //Console.WriteLine($"\n🔄 Iniciando procesamiento de: '{userInput}'");
 
         // Paso 1: Enviar input del usuario al LLM
         var llmResponse = await _llmService.SendPromptAsync(userInput);
-        Console.WriteLine($"\n🧠 LLM Respuesta (Iteración {++iteration}):");
+        Console.WriteLine($"\nLLM Respuesta (Iteración {++iteration}):");
         Console.WriteLine(llmResponse);
 
         var sanitizedLlmResponse = SanitizeJson.Sanitize(llmResponse);
@@ -42,11 +41,11 @@ public class FlowOrchestrator : IFlowOrchestrator
             
             if (validation.IsValid)
             {
-                Console.WriteLine($"\n✅ Acción MCP válida detectada: {validation.Tool}");
+                Console.WriteLine($"\nAcción MCP válida detectada: {validation.Tool}");
                 
                 // Enviar al servidor MCP
                 var mcpResponse = await _mcpService.SendCommandAsync(sanitizedLlmResponse);
-                Console.WriteLine($"\n🔧 MCP Server Respuesta:");
+                Console.WriteLine($"\nMCP Server Respuesta:");
                 Console.WriteLine(mcpResponse);
                 
                 conversationHistory.Add($"MCP: {mcpResponse}");
@@ -54,12 +53,12 @@ public class FlowOrchestrator : IFlowOrchestrator
                 // Verificar si el MCP devolvió un error y necesitamos redirigir al LLM
                 if (ShouldRedirectToLlm(mcpResponse))
                 {
-                    Console.WriteLine($"\n🔄 Redirigiendo error al LLM para corrección...");
+                    Console.WriteLine($"\nRedirigiendo error al LLM para corrección...");
                     var contextualPrompt = BuildContextualPrompt(mcpResponse, conversationHistory);
                     llmResponse = await _llmService.SendPromptAsync(contextualPrompt);
                     sanitizedLlmResponse = SanitizeJson.Sanitize(llmResponse);
                     
-                    Console.WriteLine($"\n🧠 LLM Corrección (Iteración {++iteration}):");
+                    Console.WriteLine($"\nLLM Corrección (Iteración {++iteration}):");
                     Console.WriteLine(llmResponse);
                     
                     conversationHistory.Add($"LLM_CORRECTION: {sanitizedLlmResponse}");
@@ -70,12 +69,12 @@ public class FlowOrchestrator : IFlowOrchestrator
                     // Verificar si es una herramienta informativa
                     if (IsInformativeTool(validation.Tool))
                     {
-                        Console.WriteLine($"\n📋 Herramienta informativa detectada: {validation.Tool}. Redirigiendo al LLM con información...");
+                        Console.WriteLine($"\nHerramienta informativa detectada: {validation.Tool}. Redirigiendo al LLM con información...");
                         var informativePrompt = BuildInformativePrompt(mcpResponse, conversationHistory);
                         llmResponse = await _llmService.SendPromptAsync(informativePrompt);
                         sanitizedLlmResponse = SanitizeJson.Sanitize(llmResponse);
                         
-                        Console.WriteLine($"\n🧠 LLM con información (Iteración {++iteration}):");
+                        Console.WriteLine($"\nLLM con información (Iteración {++iteration}):");
                         Console.WriteLine(llmResponse);
                         
                         conversationHistory.Add($"LLM_INFORMED: {sanitizedLlmResponse}");
@@ -88,7 +87,7 @@ public class FlowOrchestrator : IFlowOrchestrator
                         var finalPrompt = $"Basado en este resultado exitoso del sistema: {mcpResponse}\n\nGenera una respuesta amigable para el usuario explicando qué se hizo y el resultado obtenido.";
                         var finalResponse = await _llmService.SendPromptAsync(finalPrompt);
                         
-                        Console.WriteLine($"\n🎯 Respuesta final generada");
+                        Console.WriteLine($"\nRespuesta final generada");
                         return finalResponse;
                     }
                 }

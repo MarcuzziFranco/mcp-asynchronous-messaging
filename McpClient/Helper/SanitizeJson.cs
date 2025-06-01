@@ -7,9 +7,9 @@ public static class SanitizeJson
 {
     public static string Sanitize(string input)
     {
-        Console.WriteLine("========================== SanitizeJson ==========================");
-        Console.WriteLine($"INPUT RECIBIDO: {input}");
-        Console.WriteLine("===============================================================");
+        //Console.WriteLine("========================== SanitizeJson ==========================");
+        //Console.WriteLine($"INPUT RECIBIDO: {input}");
+        //Console.WriteLine("===============================================================");
 
         if (string.IsNullOrWhiteSpace(input))
         {
@@ -75,8 +75,8 @@ public static class SanitizeJson
             //Console.WriteLine("INTENTANDO PARSEAR STRING COMPLETO LIMPIO...");
             if (TryParseJson(normalizedQuotes, out string finalJson))
             {
-                Console.WriteLine($"STRING COMPLETO ES JSON VÁLIDO: {finalJson}");
-                Console.WriteLine("========================== FIN SanitizeJson ==========================");
+                //Console.WriteLine($"STRING COMPLETO ES JSON VÁLIDO: {finalJson}");
+                //Console.WriteLine("========================== FIN SanitizeJson ==========================");
                 return finalJson;
             }
 
