@@ -10,7 +10,6 @@ public class RabbitMqService : IRabbitMqService, IDisposable
 {
     private IConnection? _connection;
     private bool _disposed = false;
-    private readonly List<string> _connectedServices = new();
     private readonly List<string> _topics = new() 
     { 
         "crm-notificaciones", 
@@ -201,29 +200,6 @@ public class RabbitMqService : IRabbitMqService, IDisposable
         await Task.Delay(50); // Simular operación asíncrona
         Console.WriteLine("Listing available topics");
         return new List<string>(_topics);
-    }
-
-    public async Task<string> ConnectServiceAsync(string serviceName)
-    {
-        if (_connection == null)
-            throw new InvalidOperationException("La conexión no ha sido inicializada. Llama a InitializeAsync() primero.");
-
-        try
-        {
-            // Simular conexión a un servicio específico
-            if (!_connectedServices.Contains(serviceName))
-            {
-                _connectedServices.Add(serviceName);
-            }
-
-            await Task.Delay(100); // Simular tiempo de conexión
-            Console.WriteLine($"Connected to service: {serviceName}");
-            return serviceName;
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"Error al conectar con el servicio '{serviceName}': {ex.Message}", ex);
-        }
     }
 
     public async Task<bool> IsConnectedAsync()

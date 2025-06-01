@@ -16,6 +16,9 @@ builder.Services.Configure<JsonOptions>(options =>
 // Registrar el servicio con la interfaz
 builder.Services.AddSingleton<IRabbitMqService, RabbitMqService>();
 
+// Registrar el servicio de información de herramientas
+builder.Services.AddSingleton<IToolInfoService, ToolInfoService>();
+
 // Agregar servicios de Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -48,7 +51,7 @@ using (var scope = app.Services.CreateScope())
     await rabbitService.InitializeAsync();
 }
 
-app.MapPost("/mcp", async (McpRequest request, IRabbitMqService rabbitService) =>
+app.MapPost("/mcp", async (McpRequest request, IRabbitMqService rabbitService, IToolInfoService toolInfoService) =>
 {
     try
     {
@@ -58,8 +61,8 @@ app.MapPost("/mcp", async (McpRequest request, IRabbitMqService rabbitService) =
             "sendMessageToTopic" => await HandleSendMessageToTopic(request, rabbitService),
             "readQueue" => await HandleReadQueue(request, rabbitService),
             "listTopics" => await HandleListTopics(request, rabbitService),
-            "connectService" => await HandleConnectService(request, rabbitService),
-            "requestClarification" => HandleRequestClarification(),
+            "listTools" => HandleListTools(toolInfoService),
+            "describeTool" => HandleDescribeTool(request, toolInfoService),
             _ => HandleUnsupportedTool(request.Tool)
         };
     }
@@ -72,8 +75,7 @@ app.MapPost("/mcp", async (McpRequest request, IRabbitMqService rabbitService) =
                 errorContext = new { 
                     failedAction = request.Tool, 
                     reason = ex.Message 
-                },
-                nextAction = "requestClarification"
+                }
             }
         });
     }
@@ -151,42 +153,59 @@ async Task<IResult> HandleListTopics(McpRequest request, IRabbitMqService rabbit
     });
 }
 
-async Task<IResult> HandleConnectService(McpRequest request, IRabbitMqService rabbitService)
+IResult HandleListTools(IToolInfoService toolInfoService)
 {
-    Console.WriteLine("HandleConnectService");
-    var serviceName = request.Parameters["service"]!.ToString()!;
-    await rabbitService.ConnectServiceAsync(serviceName);
+    var availableTools = toolInfoService.GetAvailableTools();
 
     return Results.Ok(new ApiResponse<object>
     {
-        Status = "connected",
-        Data = new { service = serviceName }
+        Status = "success",
+        Data = new { tools = availableTools }
     });
 }
 
-IResult HandleRequestClarification()
+IResult HandleDescribeTool(McpRequest request, IToolInfoService toolInfoService)
 {
-    Console.WriteLine("HandleRequestClarification");
+    if (!request.Parameters.ContainsKey("toolName"))
+    {
+        return Results.Ok(new ApiResponse<object>
+        {
+            Status = "error",
+            Data = new { 
+                errorContext = new { 
+                    failedAction = "describeTool", 
+                    reason = "Missing required parameter 'toolName'" 
+                }
+            }
+        });
+    }
+
+    var toolName = request.Parameters["toolName"]!.ToString()!;
+    var toolDefinition = toolInfoService.GetToolDefinition(toolName);
+
+    if (toolDefinition == null)
+    {
+        return Results.Ok(new ApiResponse<object>
+        {
+            Status = "error",
+            Data = new { 
+                errorContext = new { 
+                    failedAction = "describeTool", 
+                    reason = $"Unknown tool: {toolName}" 
+                }
+            }
+        });
+    }
+
     return Results.Ok(new ApiResponse<object>
     {
-        Status = "clarification-needed",
-        Data = new {
-            message = "The request could not be resolved to a specific action. Below are the supported MCP actions and their descriptions.",
-            supportedActions = new[]
-            {
-                new { action = "sendMessageToQueue", description = "Send a message to a queue" },
-                new { action = "sendMessageToTopic", description = "Send a message to a topic" },
-                new { action = "readQueue", description = "Read a message from a queue" },
-                new { action = "listTopics", description = "List all topics" },
-                new { action = "connectService", description = "Connect to a service" }
-            }
-        }
+        Status = "success",
+        Data = toolDefinition
     });
 }
 
 IResult HandleUnsupportedTool(string tool)
 {
-    Console.WriteLine("HandleUnsupportedTool");
     return Results.Ok(new ApiResponse<object>
     {
         Status = "error",
@@ -195,7 +214,11 @@ IResult HandleUnsupportedTool(string tool)
                 failedAction = tool, 
                 reason = "Invalid action" 
             },
-            nextAction = "requestClarification"
+            message = "Tool not supported. Use 'listTools' to see available tools or 'describeTool' with parameter 'toolName' to get details about a specific tool.",
+            suggestion = new {
+                action = "listTools",
+                description = "Call this to see all available tools"
+            }
         }
     });
 }

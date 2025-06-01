@@ -16,35 +16,7 @@ while (true)
     Console.WriteLine("\nLLM → Mensaje final para usuario:");
     finalMessage = SanitizeJson.Sanitize(finalMessage);
     Console.WriteLine(finalMessage);
-    // Step 1: Send the prompt to the LLM
-  /*var llmResponse = await llmService.SendPromptAsync(input);
-    Console.WriteLine("\n🔁 LLM Response:");
-    Console.WriteLine(llmResponse);
-
-    // Sanitize the response to remove special characters
-    var sanitizedResponse = SanitizeJson.Sanitize(llmResponse);
-
-    // Step 2: Send the response to the MCP
-    var mcpResponse = await mcpService.SendCommandAsync(sanitizedResponse);
-    Console.WriteLine("\nMCP Service Response:");
-    Console.WriteLine(mcpResponse);
-
-    // Step 3: If the LLM requested clarification, resend the MCP response to the LLM
-    if (mcpResponse.Contains("\"action\": \"requestClarification\"")) //Actulizar la clave action por nextAction y armar el flujo correspondiente.
-    {
-        Console.WriteLine("\nReenviando información al LLM para reevaluar...");
-
-        var refinedResponse = await llmService.SendPromptAsync(mcpResponse);
-        Console.WriteLine("\nNueva respuesta del LLM:");
-        Console.WriteLine(refinedResponse);
-
-        var finalMcpResponse = await mcpService.SendCommandAsync(refinedResponse);
-        Console.WriteLine("\nMCP Final Response:");
-        Console.WriteLine(finalMcpResponse);
-    }
-    else {
-        Console.WriteLine("Ready inference completed");
-    }*/
+    
 }
 
 async Task<string> ExecuteFinalWithFormatting(string userInput)

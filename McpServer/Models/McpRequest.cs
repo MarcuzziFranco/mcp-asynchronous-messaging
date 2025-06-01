@@ -50,3 +50,35 @@ public class ConnectionResponse
     public string Service { get; set; } = string.Empty;
     public bool IsConnected { get; set; }
 }
+
+public class ListToolsResponse
+{
+    public string Status { get; set; } = string.Empty;
+    public ToolsData Data { get; set; } = new();
+}
+
+public class ToolsData
+{
+    public List<string> Tools { get; set; } = new();
+}
+
+public class DescribeToolResponse
+{
+    public string Status { get; set; } = string.Empty;
+    public ToolDefinition Data { get; set; } = new();
+}
+
+public class ToolDefinition
+{
+    public string Tool { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public Dictionary<string, ParameterDefinition> Parameters { get; set; } = new();
+    public object? ResponseExample { get; set; }
+}
+
+public class ParameterDefinition
+{
+    public string Type { get; set; } = string.Empty;
+    public bool Required { get; set; }
+    public string? Description { get; set; }
+}

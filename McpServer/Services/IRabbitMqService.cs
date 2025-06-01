@@ -9,6 +9,5 @@ public interface IRabbitMqService : IDisposable
     Task SendMessageToTopicAsync(string topic, string message);
     Task<List<QueueMessage>> ReadQueueAsync(string queue, int maxMessages = 10);
     Task<List<string>> ListTopicsAsync();
-    Task<string> ConnectServiceAsync(string serviceName);
     Task<bool> IsConnectedAsync();
 } 
