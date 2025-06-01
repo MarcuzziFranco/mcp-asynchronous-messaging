@@ -7,6 +7,8 @@ public class FlowOrchestrator : IFlowOrchestrator
 {
     private readonly LlmService _llmService;
     private readonly McpService _mcpService;
+    private readonly List<string> _informativeTools = new() { "listTools", "describeTool" };
+    private string _originalUserInput = string.Empty;
 
     public FlowOrchestrator(LlmService llmService, McpService mcpService)
     {
@@ -19,6 +21,9 @@ public class FlowOrchestrator : IFlowOrchestrator
         var conversationHistory = new List<string>();
         var maxIterations = 10; // Prevenir bucles infinitos
         var iteration = 0;
+
+        // Guardar el input original del usuario para contexto
+        _originalUserInput = userInput;
 
         //Console.WriteLine($"\n🔄 Iniciando procesamiento de: '{userInput}'");
 
@@ -62,13 +67,30 @@ public class FlowOrchestrator : IFlowOrchestrator
                 }
                 else
                 {
-                    // Éxito: Enviar resultado al LLM para formatear respuesta final
-                    Console.WriteLine($"\n✅ Éxito! Formateando respuesta final...");
-                    var finalPrompt = $"Basado en este resultado exitoso del sistema: {mcpResponse}\n\nGenera una respuesta amigable para el usuario explicando qué se hizo y el resultado obtenido.";
-                    var finalResponse = await _llmService.SendPromptAsync(finalPrompt);
-                    
-                    Console.WriteLine($"\n🎯 Respuesta final generada");
-                    return finalResponse;
+                    // Verificar si es una herramienta informativa
+                    if (IsInformativeTool(validation.Tool))
+                    {
+                        Console.WriteLine($"\n📋 Herramienta informativa detectada: {validation.Tool}. Redirigiendo al LLM con información...");
+                        var informativePrompt = BuildInformativePrompt(mcpResponse, conversationHistory);
+                        llmResponse = await _llmService.SendPromptAsync(informativePrompt);
+                        sanitizedLlmResponse = SanitizeJson.Sanitize(llmResponse);
+                        
+                        Console.WriteLine($"\n🧠 LLM con información (Iteración {++iteration}):");
+                        Console.WriteLine(llmResponse);
+                        
+                        conversationHistory.Add($"LLM_INFORMED: {sanitizedLlmResponse}");
+                        continue;
+                    }
+                    else
+                    {
+                        // Éxito con herramienta ejecutiva: Enviar resultado al LLM para formatear respuesta final
+                        Console.WriteLine($"\n✅ Éxito con herramienta ejecutiva! Formateando respuesta final...");
+                        var finalPrompt = $"Basado en este resultado exitoso del sistema: {mcpResponse}\n\nGenera una respuesta amigable para el usuario explicando qué se hizo y el resultado obtenido.";
+                        var finalResponse = await _llmService.SendPromptAsync(finalPrompt);
+                        
+                        Console.WriteLine($"\n🎯 Respuesta final generada");
+                        return finalResponse;
+                    }
                 }
             }
             else
@@ -131,6 +153,35 @@ public class FlowOrchestrator : IFlowOrchestrator
         return await _llmService.SendPromptAsync(contextualPrompt);
     }
 
+    private bool IsInformativeTool(string toolName)
+    {
+        return _informativeTools.Contains(toolName);
+    }
+
+    private string BuildInformativePrompt(string mcpResponse, List<string> conversationHistory)
+    {
+        var context = string.Join("\n", conversationHistory.TakeLast(3));
+        
+        return $"""
+        SOLICITUD ORIGINAL DEL USUARIO: {_originalUserInput}
+
+        Contexto de la conversación:
+        {context}
+
+        Has recibido información del servidor MCP:
+        {mcpResponse}
+
+        IMPORTANTE: Esta información es solo para ayudarte a completar la solicitud original del usuario.
+        NO es la respuesta final. Usa esta información para:
+
+        1. Si obtuviste la lista de herramientas (listTools), úsala para ejecutar la acción apropiada para la solicitud original
+        2. Si obtuviste descripción de una herramienta (describeTool), úsala para formar los parámetros correctos
+        3. Ejecuta ahora la acción MCP que realmente cumple con la solicitud original del usuario
+
+        Genera la siguiente acción MCP necesaria para completar: "{_originalUserInput}"
+        """;
+    }
+
     private McpActionValidation ValidateMcpAction(string response)
     {
         try
@@ -189,6 +240,8 @@ public class FlowOrchestrator : IFlowOrchestrator
         var context = string.Join("\n", conversationHistory.TakeLast(3));
         
         return $"""
+        SOLICITUD ORIGINAL DEL USUARIO: {_originalUserInput}
+
         Contexto de la conversación:
         {context}
 
